@@ -1,0 +1,52 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.38.5'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: subosito/flutter-action@v2.21.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Setup dependencies
+        run: make windows-install-deps
+        shell: bash
+
+      - name: Prepare
+        run: make windows-prepare
+        shell: bash
+
+      - name: Build Windows exe
+        run: make windows-release
+        shell: bash
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path out -Force
+          $exe = Get-ChildItem -Path dist -Recurse -Filter "*.exe" | Select-Object -First 1
+          if ($exe) { Copy-Item $exe.FullName "out\SAQANet-Windows-Setup-x64.exe" }
+          $zip = Get-ChildItem -Path dist -Recurse -Filter "*.zip" | Select-Object -First 1
+          if ($zip) { Copy-Item $zip.FullName "out\SAQANet-Windows-Portable-x64.zip" }
+          Get-ChildItem out
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAQANet-Windows
+          path: out/
+          retention-days: 14
