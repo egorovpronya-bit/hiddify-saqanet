@@ -29,7 +29,7 @@ jobs:
         shell: bash
 
       - name: Build Windows exe
-        run: make windows-release
+        run: make windows-zip-release windows-exe-release
         shell: bash
 
       - name: Collect artifacts
